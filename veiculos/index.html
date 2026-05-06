@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Veículos</title>
+
+```
+<style>
+    body {
+        font-family: Arial;
+        margin: 20px;
+        background: #f5f5f5;
+    }
+
+    h1 {
+        color: #333;
+    }
+
+    input {
+        margin: 5px;
+        padding: 5px;
+    }
+
+    button {
+        margin: 5px;
+        padding: 6px 10px;
+        cursor: pointer;
+    }
+
+    table {
+        margin-top: 20px;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    th, td {
+        padding: 8px 12px;
+    }
+
+    th {
+        background: #ddd;
+    }
+</style>
+```
+
+</head>
+<body>
+
+<h1>🚗 Sistema de Gestão de Veículos</h1>
+
+<!-- CADASTRO -->
+
+<h2>➕ Cadastrar Veículo</h2>
+<form id="formCadastro">
+    <input type="text" id="modelo" placeholder="Modelo" required>
+    <input type="text" id="marca" placeholder="Marca" required>
+    <input type="number" id="ano" placeholder="Ano" required>
+    <input type="text" id="cor" placeholder="Cor">
+    <input type="number" id="preco" placeholder="Preço">
+    <input type="number" id="km" placeholder="Quilometragem">
+    <input type="text" id="status" placeholder="Status">
+    <button type="submit">Salvar</button>
+</form>
+
+<!-- FILTRO -->
+
+<h2>🔎 Buscar Veículos</h2>
+<input type="text" id="fMarca" placeholder="Marca">
+<input type="text" id="fModelo" placeholder="Modelo">
+<input type="number" id="fAno" placeholder="Ano">
+<input type="number" id="fPrecoMin" placeholder="Preço Min">
+<input type="number" id="fPrecoMax" placeholder="Preço Max">
+<input type="text" id="fStatus" placeholder="Status">
+<button onclick="filtrar()">Buscar</button>
+<button onclick="listar()">Limpar</button>
+
+<!-- LISTA -->
+
+<h2>📋 Lista de Veículos</h2>
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Modelo</th>
+            <th>Marca</th>
+            <th>Ano</th>
+            <th>Preço</th>
+            <th>Status</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody id="tabela"></tbody>
+</table>
+
+<script>
+
+const API = "http://localhost:8080/veiculos";
+
+// ================= LISTAR =================
+function listar() {
+    fetch(API)
+    .then(res => res.json())
+    .then(data => {
+        const tabela = document.getElementById("tabela");
+        tabela.innerHTML = "";
+
+        data.forEach(v => {
+            tabela.innerHTML += `
+                <tr>
+                    <td>${v.id}</td>
+                    <td>${v.modelo}</td>
+                    <td>${v.marca}</td>
+                    <td>${v.ano}</td>
+                    <td>${v.preco}</td>
+                    <td>${v.status}</td>
+                    <td>
+                        <button onclick="editar(${v.id})">Editar</button>
+                        <button onclick="deletar(${v.id})">Excluir</button>
+                    </td>
+                </tr>
+            `;
+        });
+    })
+    .catch(err => alert("Erro ao carregar dados: " + err));
+}
+
+// ================= CADASTRAR =================
+document.getElementById("formCadastro").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const veiculo = {
+        modelo: document.getElementById("modelo").value,
+        marca: document.getElementById("marca").value,
+        ano: document.getElementById("ano").value,
+        cor: document.getElementById("cor").value,
+        preco: document.getElementById("preco").value,
+        quilometragem: document.getElementById("km").value,
+        status: document.getElementById("status").value
+    };
+
+    fetch(API, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(veiculo)
+    })
+    .then(() => {
+        alert("Veículo cadastrado com sucesso!");
+        listar();
+        document.getElementById("formCadastro").reset();
+    })
+    .catch(err => alert("Erro ao cadastrar: " + err));
+});
+
+// ================= DELETAR =================
+function deletar(id) {
+    if(confirm("Deseja excluir este veículo?")) {
+        fetch(`${API}/${id}`, { method: "DELETE" })
+        .then(() => listar())
+        .catch(err => alert("Erro ao deletar: " + err));
+    }
+}
+
+// ================= EDITAR =================
+function editar(id) {
+    const novoPreco = prompt("Digite o novo preço:");
+    const novoStatus = prompt("Digite o novo status:");
+
+    const veiculo = {
+        preco: novoPreco,
+        status: novoStatus
+    };
+
+    fetch(`${API}/${id}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(veiculo)
+    })
+    .then(() => {
+        alert("Veículo atualizado!");
+        listar();
+    })
+    .catch(err => alert("Erro ao atualizar: " + err));
+}
+
+// ================= FILTRAR =================
+function filtrar() {
+    let url = `${API}/filtro?`;
+
+    if (document.getElementById("fMarca").value)
+        url += `marca=${document.getElementById("fMarca").value}&`;
+
+    if (document.getElementById("fModelo").value)
+        url += `modelo=${document.getElementById("fModelo").value}&`;
+
+    if (document.getElementById("fAno").value)
+        url += `ano=${document.getElementById("fAno").value}&`;
+
+    if (document.getElementById("fPrecoMin").value)
+        url += `precoMin=${document.getElementById("fPrecoMin").value}&`;
+
+    if (document.getElementById("fPrecoMax").value)
+        url += `precoMax=${document.getElementById("fPrecoMax").value}&`;
+
+    if (document.getElementById("fStatus").value)
+        url += `status=${document.getElementById("fStatus").value}&`;
+
+    fetch(url)
+    .then(res => res.json())
+    .then(data => {
+        const tabela = document.getElementById("tabela");
+        tabela.innerHTML = "";
+
+        data.forEach(v => {
+            tabela.innerHTML += `
+                <tr>
+                    <td>${v.id}</td>
+                    <td>${v.modelo}</td>
+                    <td>${v.marca}</td>
+                    <td>${v.ano}</td>
+                    <td>${v.preco}</td>
+                    <td>${v.status}</td>
+                    <td>-</td>
+                </tr>
+            `;
+        });
+    })
+    .catch(err => alert("Erro ao filtrar: " + err));
+}
+
+// carregar automaticamente
+listar();
+
+</script>
+
+</body>
+</html>
