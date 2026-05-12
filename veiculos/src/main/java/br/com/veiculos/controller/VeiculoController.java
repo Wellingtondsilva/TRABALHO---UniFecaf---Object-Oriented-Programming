@@ -25,6 +25,14 @@ public class VeiculoController {
     public Veiculo cadastrar(@RequestBody Veiculo veiculo) {
         return service.salvar(veiculo);
     }
+    @PutMapping("/{id}")
+public Veiculo atualizar(@PathVariable Long id,
+                         @RequestBody Veiculo veiculo) {
+
+    veiculo.setId(id);
+
+    return service.salvar(veiculo);
+}
 
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable Long id) {
